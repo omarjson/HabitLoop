@@ -39,6 +39,10 @@ export function render() {
   else if (currentView === 'insights') r.innerHTML = renderInsights();
   else if (currentView === 'settings') r.innerHTML = renderSettings();
   bindView();
+  // replay load animation only once per view mount
+  r.querySelector('.view.enter')?.addEventListener('animationend', (e) => {
+    if (e.target.classList.contains('loop-row')) r.querySelector('.view')?.classList.remove('enter');
+  }, { once: true });
 }
 
 function toast(msg) {
@@ -104,7 +108,7 @@ function renderToday() {
       </div>`;
     })
     .join('');
-  return `<div class="view"><div>${rows}</div>
+  return `<div class="view enter"><div>${rows}</div>
     <div class="flex spread"><span class="muted">${dateKey(new Date())}</span>
     <button class="primary" id="add-habit">+ ${t('today.add')}</button></div></div>`;
 }
@@ -136,14 +140,51 @@ function renderStats() {
 }
 
 function heatmapSVG(cells) {
-  const w = cells.length * 15;
-  const rects = cells
-    .map((c, i) => {
-      if (c.level < 0) return '';
-      return `<rect x="${i * 15}" y="0" width="12" height="12" rx="3" class="hm-cell" data-level="${c.level}"><title>${c.date}</title></rect>`;
+  const valid = cells.filter((c) => c.level >= 0);
+  if (valid.length === 0) return '<p class="muted">No history yet.</p>';
+  const size = 240;
+  const cx = size / 2;
+  const cy = size / 2;
+  const inner = 26;
+  const ringStep = (cx - inner - 10) / Math.max(1, weeksOf(cells));
+  const petals = valid
+    .map((c) => {
+      const dayIdx = new Date(c.date + 'T00:00:00Z').getUTCDay(); // 0..6
+      const weekIdx = Math.floor(dayIndexFromStart(cells, c.date) / 7);
+      const angle = (dayIdx / 7) * Math.PI * 2 - Math.PI / 2;
+      const r = inner + weekIdx * ringStep;
+      const x = cx + Math.cos(angle) * r;
+      const y = cy + Math.sin(angle) * r;
+      const rad = c.level === 4 ? 4.2 : c.level >= 2 ? 3.2 : 2.2;
+      const fill =
+        c.level === 4
+          ? 'url(#loopGrad)'
+          : c.level === 3
+          ? 'var(--cyan)'
+          : c.level === 2
+          ? 'var(--violet)'
+          : c.level === 1
+          ? 'var(--warn)'
+          : 'var(--panel-2)';
+      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${rad}" fill="${fill}"><title>${c.date}</title></circle>`;
     })
     .join('');
-  return `<div class="heatmap"><svg width="${w}" height="12">${rects}</svg></div>`;
+  // faint orbit rings
+  let rings = '';
+  const n = weeksOf(cells);
+  for (let i = 1; i <= n; i++) {
+    const r = inner + i * ringStep;
+    if (r > cx - 6) break;
+    rings += `<circle cx="${cx}" cy="${cy}" r="${r.toFixed(1)}" fill="none" stroke="var(--line)" stroke-width="0.5" opacity="0.5" />`;
+  }
+  return `<div class="heatmap radial"><svg viewBox="0 0 ${size} ${size}" width="240" height="240">${rings}${petals}<circle cx="${cx}" cy="${cy}" r="6" fill="url(#loopGrad)" /></svg></div>`;
+}
+
+function weeksOf(cells) {
+  return Math.ceil(cells.filter((c) => c.level >= 0).length / 7);
+}
+function dayIndexFromStart(cells, date) {
+  return cells.findIndex((c) => c.date === date);
 }
 
 function barChart(buckets) {

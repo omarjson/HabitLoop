@@ -8,17 +8,21 @@ An offline-first **Progressive Web App** habit tracker with local-first sync, sm
 
 ## ✨ Features
 
-- **Habits & check-ins** — one-tap daily logging with optional notes
+- **Habits & check-ins** — one-tap daily logging with optional notes, rendered as **Loop Rings** that close (chromatic arc fills) when you complete them
 - **Advanced scheduling** — daily, every N days, X/week, X/month, or specific weekdays; grace-aware streaks
 - **Streaks & stats** — current/best streak, completion rate, total check-ins
-- **Heatmap & charts** — GitHub-style SVG contribution grid + weekly trend bars
+- **Heatmap & charts** — radial "bloom" year heatmap (weeks as concentric rings) + weekly trend bars
 - **Insights (ML)** — in-browser sentiment analysis of your notes via `transformers.js` (WebGPU/CPU), plus a habit correlation engine
 - **Gamification** — XP, levels, badges, and shareable SVG streak cards
 - **Cross-device sync** — conflict-free CRDT (`yjs` + `y-indexeddb`) with optional peer-to-peer sync via `y-webrtc` (no server)
 - **Reminders** — Notification API nudges for due habits
-- **i18n & a11y** — English/العربية, full keyboard navigation, ARIA, dark/light theme
+- **i18n & a11y** — English/العربية, full keyboard navigation, ARIA, dark/light theme, reduced-motion respected
 - **PWA** — installable, works fully offline
 - **Export / Import** — JSON backup
+
+## 🎨 Design
+
+HabitLoop uses an **"Observatory"** visual system: a near-black blue canvas, a chromatic ring gradient (violet → cyan → lime), and **Space Grotesk / Inter / IBM Plex Mono**. The signature element is the **Loop Ring** — every habit is a circle whose arc travels around and closes when you check in, echoing the app's subject (habits as rhythms, not checklists). The history heatmap is rendered as a radial bloom.
 
 ## 🚀 Deploy (free)
 

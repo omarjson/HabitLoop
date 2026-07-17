@@ -321,6 +321,44 @@ button.primary:hover { filter: brightness(1.08); }
 .hm-cell[data-level="3"] { background: #2a7d6e; }
 .hm-cell[data-level="4"] { background: linear-gradient(135deg, var(--ring-a), var(--ring-c)); }
 
+/* radial bloom heatmap */
+.heatmap.radial { display: block; overflow: visible; }
+.heatmap.radial svg { max-width: 100%; height: auto; }
+
+/* page-load ring draw-in: orchestrated moment */
+@keyframes drawRing {
+  from { stroke-dashoffset: var(--circ); }
+  to { stroke-dashoffset: var(--final, 0); }
+}
+.loop .prog { --circ: 201; }
+.view.enter .loop .prog {
+  animation: drawRing 0.9s cubic-bezier(0.3, 0.9, 0.2, 1) both;
+}
+.view.enter .loop-row { animation: rise 0.5s ease both; }
+.view.enter .loop-row:nth-child(1) { animation-delay: 0.04s; }
+.view.enter .loop-row:nth-child(2) { animation-delay: 0.12s; }
+.view.enter .loop-row:nth-child(3) { animation-delay: 0.20s; }
+.view.enter .loop-row:nth-child(4) { animation-delay: 0.28s; }
+.view.enter .loop-row:nth-child(5) { animation-delay: 0.36s; }
+
+/* ambient logo orbit */
+.logo { position: relative; }
+.logo::after {
+  content: "";
+  position: absolute;
+  right: -14px; top: 50%;
+  width: 6px; height: 6px;
+  margin-top: -3px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 10px var(--cyan);
+  animation: orbit 6s linear infinite;
+}
+@keyframes orbit {
+  from { transform: rotate(0deg) translateX(8px) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(8px) rotate(-360deg); }
+}
+
 .chart { width: 100%; height: 120px; }
 .bar { fill: url(#loopGrad); }
 .line { fill: none; stroke: var(--cyan); stroke-width: 2; }
@@ -407,4 +445,7 @@ h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
   .view, .toast { animation: none; }
   .loop .prog { transition: none; }
   .loop.due:not(.done) .check { animation: none; }
+  .view.enter .loop .prog,
+  .view.enter .loop-row { animation: none; }
+  .logo::after { animation: none; }
 }
