@@ -4,6 +4,8 @@ An offline-first **Progressive Web App** habit tracker with local-first sync, sm
 
 ![HabitLoop](public/icons/icon-192.png)
 
+[🇸🇦 القراءة بالعربية](README.ar.md)
+
 ## ✨ Features
 
 - **Habits & check-ins** — one-tap daily logging with optional notes
@@ -64,4 +66,4 @@ e2e/             playwright check-in flow
 Vanilla JS + [Vite](https://vitejs.dev) · [yjs](https://yjs.dev) · [idb](https://github.com/jakearchibald/idb) · [@xenova/transformers](https://huggingface.co/docs/transformers.js) · Vitest · Playwright
 
 ## 📄 License
-MIT
+MIT — see the [LICENSE](LICENSE) file.
