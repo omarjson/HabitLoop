@@ -1,3 +1,4 @@
+import '../styles/main.css';
 import { initLang, toggleLang, getLang } from './i18n.js';
 import { initTheme, toggleTheme, getTheme } from './theme.js';
 import { ready } from './store.js';
@@ -31,6 +32,10 @@ async function main() {
     pill.classList.toggle('online', connected);
   });
 
+  // show a loading state immediately
+  const root = document.getElementById('view-root');
+  if (root) root.innerHTML = '<div class="card empty">Loading…</div>';
+
   // wait for IndexedDB persistence
   await ready();
   initUI();
@@ -42,8 +47,12 @@ async function main() {
 
   // register service worker
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./src/sw.js').catch(() => {});
+    navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('SW register failed', e));
   }
 }
 
-main();
+main().catch((err) => {
+  console.error(err);
+  const root = document.getElementById('view-root');
+  if (root) root.innerHTML = '<div class="card empty">Failed to load: ' + (err && err.message ? err.message : err) + '</div>';
+});
