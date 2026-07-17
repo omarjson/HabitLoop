@@ -1,5 +1,6 @@
 import { allCompletions, listHabits } from './store.js';
 import { dateKey, addDays } from './schedule.js';
+import { heatmapData } from './stats.js';
 
 const XP_PER_CHECKIN = 10;
 const XP_PER_STREAK_DAY = 2;
@@ -50,14 +51,62 @@ export function evaluateBadges() {
   return badges;
 }
 
-// Generate a shareable SVG streak card (returns data URL string).
+// Generate a shareable radial-bloom streak card as an SVG string.
 export function streakCardSVG(habit, streak) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200">
-    <rect width="400" height="200" rx="16" fill="#171a21"/>
-    <text x="24" y="48" fill="#e6e9ef" font-size="22" font-family="system-ui">${habit.emoji} ${habit.name}</text>
-    <text x="24" y="120" fill="#6ee7b7" font-size="64" font-weight="800" font-family="system-ui">${streak}</text>
-    <text x="120" y="120" fill="#9aa3b2" font-size="20" font-family="system-ui">day streak</text>
-    <text x="24" y="170" fill="#9aa3b2" font-size="14" font-family="system-ui">HabitLoop</text>
+  const cells = heatmapData(habit, 26).filter((c) => c.level >= 0);
+  const size = 480;
+  const cx = size / 2;
+  const cy = size / 2;
+  const inner = 60;
+  const weeks = Math.max(1, Math.ceil(cells.length / 7));
+  const step = (cx - inner - 12) / weeks;
+  const start = dateKey(new Date(habit.createdAt));
+  const startIdx = cells.findIndex((c) => c.date === start);
+
+  let rings = '';
+  for (let i = 1; i <= weeks; i++) {
+    const r = inner + i * step;
+    if (r > cx - 6) break;
+    rings += `<circle cx="${cx}" cy="${cy}" r="${r.toFixed(1)}" fill="none" stroke="#232a39" stroke-width="0.6" opacity="0.6"/>`;
+  }
+
+  const petals = cells
+    .map((c, i) => {
+      const dayIdx = new Date(c.date + 'T00:00:00Z').getUTCDay();
+      const weekIdx = Math.max(0, Math.floor((i - Math.max(0, startIdx)) / 7));
+      const angle = (dayIdx / 7) * Math.PI * 2 - Math.PI / 2;
+      const r = inner + weekIdx * step;
+      const x = cx + Math.cos(angle) * r;
+      const y = cy + Math.sin(angle) * r;
+      const rad = c.level === 4 ? 5 : c.level >= 2 ? 3.6 : 2.4;
+      const fill =
+        c.level === 4
+          ? 'url(#g)'
+          : c.level === 3
+          ? '#2dd4d4'
+          : c.level === 2
+          ? '#7c5cff'
+          : c.level === 1
+          ? '#ff8a5b'
+          : '#1b202d';
+      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${rad}" fill="${fill}"/>`;
+    })
+    .join('');
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7c5cff"/><stop offset="50%" stop-color="#2dd4d4"/><stop offset="100%" stop-color="#b6f24a"/>
+    </linearGradient></defs>
+    <rect width="${size}" height="${size}" rx="28" fill="#0b0d12"/>
+    ${rings}${petals}
+    <circle cx="${cx}" cy="${cy}" r="46" fill="#0b0d12" stroke="url(#g)" stroke-width="2"/>
+    <text x="${cx}" y="${cy - 4}" text-anchor="middle" fill="#e8ecf4" font-size="40" font-weight="700" font-family="Space Grotesk, sans-serif">${streak}</text>
+    <text x="${cx}" y="${cy + 18}" text-anchor="middle" fill="#8a93a6" font-size="13" font-family="IBM Plex Mono, monospace">DAY STREAK</text>
+    <text x="${cx}" y="${size - 22}" text-anchor="middle" fill="#8a93a6" font-size="15" font-family="Space Grotesk, sans-serif">${habit.emoji} ${escapeXml(habit.name)} · HabitLoop</text>
   </svg>`;
   return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+
+function escapeXml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }

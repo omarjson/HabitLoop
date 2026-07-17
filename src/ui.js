@@ -250,6 +250,16 @@ function renderSettings() {
       <div class="wrap" style="gap:8px;margin-top:8px">${badgesHtml}</div>
     </div>
     <div class="card">
+      <h3>Streak card</h3>
+      <p class="muted">Share your longest-running loop as a radial bloom.</p>
+      <div id="card-preview" style="display:flex;justify-content:center;margin:12px 0"></div>
+      <div class="flex spread wrap">
+        <button class="ghost" id="card-prev">‹ Prev</button>
+        <button class="primary" id="card-share">Download PNG</button>
+        <button class="ghost" id="card-next">Next ›</button>
+      </div>
+    </div>
+    <div class="card">
       <div class="field"><label>${t('settings.theme')}</label>
         <button class="ghost" id="theme-btn">${themeLabel}</button></div>
       <div class="field"><label>${t('settings.reminders')}</label>
@@ -268,6 +278,41 @@ function renderSettings() {
       </div>
     </div>
   </div>`;
+}
+
+/* ---------- STREAK CARD ---------- */
+let cardIdx = 0;
+function cardHabits() {
+  return listHabits()
+    .filter((h) => !h.archived)
+    .map((h) => ({ h, s: habitStats(h).current }))
+    .sort((a, b) => b.s - a.s);
+}
+function renderCardPreview() {
+  const wrap = document.getElementById('card-preview');
+  if (!wrap) return;
+  const list = cardHabits();
+  if (list.length === 0) {
+    wrap.innerHTML = '<p class="muted">No habits yet.</p>';
+    return;
+  }
+  cardIdx = Math.min(cardIdx, list.length - 1);
+  const { h, s } = list[cardIdx];
+  wrap.innerHTML = `<img src="${streakCardSVG(h, s)}" width="220" height="220" alt="streak card" style="border-radius:18px;box-shadow:var(--shadow)" />`;
+  const label = document.createElement('p');
+  label.className = 'muted';
+  label.style.textAlign = 'center';
+  label.textContent = `${h.emoji} ${h.name} · ${s}-day streak (${cardIdx + 1}/${list.length})`;
+  wrap.appendChild(label);
+}
+function downloadCard() {
+  const list = cardHabits();
+  if (!list.length) return;
+  const { h, s } = list[cardIdx];
+  const a = document.createElement('a');
+  a.href = streakCardSVG(h, s);
+  a.download = `habitloop-${h.name}-streak.svg`;
+  a.click();
 }
 
 /* ---------- HABIT FORM MODAL ---------- */
@@ -412,6 +457,15 @@ function bindView() {
   if (reset) reset.addEventListener('click', () => {
     if (confirm('Delete all data?')) { resetAll(); render(); }
   });
+
+  // streak card carousel
+  renderCardPreview();
+  const cardPrev = document.getElementById('card-prev');
+  const cardNext = document.getElementById('card-next');
+  const cardShare = document.getElementById('card-share');
+  if (cardPrev) cardPrev.addEventListener('click', () => { cardIdx = (cardIdx - 1 + cardHabits().length) % Math.max(1, cardHabits().length); renderCardPreview(); });
+  if (cardNext) cardNext.addEventListener('click', () => { cardIdx = (cardIdx + 1) % Math.max(1, cardHabits().length); renderCardPreview(); });
+  if (cardShare) cardShare.addEventListener('click', downloadCard);
 }
 
 function escapeHtml(s) {
