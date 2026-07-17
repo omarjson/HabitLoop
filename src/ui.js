@@ -50,11 +50,34 @@ function toast(msg) {
 }
 
 /* ---------- TODAY ---------- */
+const R = 32;
+const CIRC = 2 * Math.PI * R;
+
+function loopRing(h, done, due) {
+  const offset = done ? 0 : CIRC; // filled when done
+  const cls = `loop ${done ? 'done' : ''} ${due && !done ? 'due' : ''}`;
+  return `<div class="${cls}">
+    <svg width="76" height="76" viewBox="0 0 76 76">
+      <circle class="track" cx="38" cy="38" r="${R}"></circle>
+      <circle class="prog" cx="38" cy="38" r="${R}"
+        stroke-dasharray="${CIRC}" stroke-dashoffset="${offset}"></circle>
+    </svg>
+    <div class="center">
+      <button class="check" data-act="toggle" data-id="${h.id}"
+        aria-label="${done ? t('habit.undo') : t('habit.done')}">${done ? '✓' : h.emoji}</button>
+    </div>
+  </div>`;
+}
+
 function renderToday() {
   const habits = listHabits().filter((h) => !h.archived);
   const today = dateKey(new Date());
   if (habits.length === 0) {
-    return `<div class="card empty">${t('today.empty')}<div style="margin-top:16px"><button class="primary" id="add-first">${t('today.add')}</button></div></div>`;
+    return `<div class="card empty">
+      <div class="lead">Nothing to loop yet.</div>
+      <div>Pick one rhythm you want to keep. We'll close the ring when you do it.</div>
+      <div style="margin-top:18px"><button class="primary" id="add-first">${t('today.add')}</button></div>
+    </div>`;
   }
   const rows = habits
     .map((h) => {
@@ -65,24 +88,23 @@ function renderToday() {
         .join('');
       const meta = due
         ? done
-          ? `<span style="color:var(--accent)">${t('habit.done')}</span>`
-          : `<span style="color:var(--warn)">due today</span>`
+          ? `<span class="done">loop closed</span>`
+          : `<span class="due">open · due today</span>`
         : `<span>${t('freq.' + h.frequency.type)}</span>`;
-      return `<div class="habit-row" data-id="${h.id}">
-        <div class="habit-emoji" style="color:${h.color}">${h.emoji}</div>
+      return `<div class="loop-row" data-id="${h.id}">
+        ${loopRing(h, done, due)}
         <div class="habit-info">
           <div class="habit-name">${escapeHtml(h.name)}</div>
           <div class="habit-meta">${meta}</div>
           <div class="habit-tags">${tags}</div>
         </div>
         <div class="row-actions">
-          <button class="check-btn ${done ? 'done' : ''}" data-act="toggle" data-id="${h.id}" aria-label="${done ? t('habit.undo') : t('habit.done')}">${done ? '✓' : ''}</button>
           <button class="ghost" data-act="edit" data-id="${h.id}" aria-label="${t('habit.edit')}">✎</button>
         </div>
       </div>`;
     })
     .join('');
-  return `<div class="view"><div class="card">${rows}</div>
+  return `<div class="view"><div>${rows}</div>
     <div class="flex spread"><span class="muted">${dateKey(new Date())}</span>
     <button class="primary" id="add-habit">+ ${t('today.add')}</button></div></div>`;
 }
